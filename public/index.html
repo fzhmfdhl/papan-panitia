@@ -336,11 +336,11 @@ function shell(inner) {
 }
 function render() {
   const pg = pagesFor(); if (!pg.some(x => x[0] === S.page)) S.page = 'task';
-  const inner = navHtml(pg) + (S.page === 'fin' ? finView() : S.page === 'sponsors' ? spView() : S.page === 'bazaar' ? bzView() : S.me.boss ? jersView() : memberView());
+  const inner = navHtml(pg) + (S.page === 'meetings' ? meetView() : S.page === 'fin' ? finView() : S.page === 'sponsors' ? spView() : S.page === 'bazaar' ? bzView() : S.me.boss ? jersView() : memberView());
   $('#app').innerHTML = shell(inner);
   $('#lo').onclick = logout;
   document.querySelectorAll('[data-pg]').forEach(b => b.onclick = () => { S.page = b.dataset.pg; render(); window.scrollTo(0, 0); });
-  if (S.page === 'fin') bindFin(); else if (S.page === 'sponsors') bindSp(); else if (S.page === 'bazaar') bindBz(); else S.me.boss ? bindJers() : bindMember();
+  if (S.page === 'meetings') bindMeet(); else if (S.page === 'fin') bindFin(); else if (S.page === 'sponsors') bindSp(); else if (S.page === 'bazaar') bindBz(); else S.me.boss ? bindJers() : bindMember();
 }
 
 /* ---------- JERS ---------- */
@@ -407,7 +407,7 @@ function bindMember() {
 const rp = n => 'Rp' + Math.round(Number(n) || 0).toLocaleString('id-ID');
 const n0 = v => Number(String(v).replace(/\D/g, '')) || 0;
 const fmtTs = ts => new Date(ts).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' });
-const pagesFor = () => [['task', 'Task']].concat(S.mods.fin ? [['fin', 'Keuangan']] : [], S.mods.sponsors ? [['sponsors', 'Sponsor']] : [], S.mods.bazaar ? [['bazaar', 'Bazar']] : []);
+const pagesFor = () => [['task', 'Task']].concat(S.mods.meetings ? [['meetings', 'Meeting']] : [], S.mods.fin ? [['fin', 'Keuangan']] : [], S.mods.sponsors ? [['sponsors', 'Sponsor']] : [], S.mods.bazaar ? [['bazaar', 'Bazar']] : []);
 const navHtml = pg => pg.length > 1 ? `<nav class="pnav">${pg.map(([k, l]) => `<button data-pg="${k}" aria-current="${S.page === k}">${l}</button>`).join('')}</nav>` : '';
 const barHtml = (p, lg) => `<div class="bar ${lg ? 'lg' : ''}" style="--w:${Math.min(100, p)}%;--c:${barColor(p)}"><b></b></div>`;
 const dropHtml = (i, l) => `<label class="drop" id="upz-${i}"><input type="file" accept="image/*" id="upf-${i}"><div id="upt-${i}"><b style="color:var(--ink)">${l}</b><br>Foto atau screenshot</div></label>`;
@@ -517,6 +517,38 @@ function bindBz() {
   });
 }
 
+/* ---------- MEETING ---------- */
+const fmtMeet = x => `${fmtDate(x.date)} · ${x.time}`;
+function meetView() {
+  const L = S.mods.meetings, coord = !S.me.boss;
+  return `<div class="hero"><div><h2>Meeting</h2><p>${coord ? 'Setelah kamu set up, Andra otomatis mendapat task untuk hadir.' : 'Semua meeting yang di-set up koordinator.'}</p></div>${coord ? '<button class="btn" id="mt-add">+ Set up meeting</button>' : ''}</div>
+  <div class="tasks">${L.length ? L.map(x => { const ok = x.attend === 'done'; return `<div class="task"><button class="trow ${ok ? 'ok' : ''}" data-m="${x.id}"><span class="chk">${ok ? CHECK : ''}</span><span class="t"><span>${esc(x.title)}</span><small>${fmtMeet(x)} · ${esc(x.place)}${!coord ? ' · ' + esc(x.by) : ''}</small></span><span class="tag ${ok ? 'terkirim' : 'belum'}">${ok ? 'Sudah dihadiri' : 'Menunggu Andra'}</span></button></div>`; }).join('') : '<div class="empty">Belum ada meeting. Set up meeting pertama.</div>'}</div>`;
+}
+function bindMeet() { const a = $('#mt-add'); if (a) a.onclick = openMeetAdd; document.querySelectorAll('[data-m]').forEach(b => b.onclick = () => openMeet(b.dataset.m)); }
+function openMeetAdd() {
+  const today = new Date(Date.now() - new Date().getTimezoneOffset() * 6e4).toISOString().slice(0, 10);
+  const d = dlgOpen(`<form class="dlg" id="mf"><div class="dh"><h3>Set up meeting</h3>${xBtn}</div>
+  <div><label for="mtt">Agenda meeting</label><input type="text" id="mtt" maxlength="100" placeholder="Contoh: Rapat persiapan konsumsi"></div>
+  <div class="two"><div><label for="mtd">Tanggal</label><input type="date" id="mtd" min="${today}"></div><div><label for="mtj">Jam</label><input type="time" id="mtj"></div></div>
+  <div><label for="mtp">Tempat atau link</label><input type="text" id="mtp" maxlength="120" placeholder="Contoh: Aula kampus / link Zoom"></div>
+  <div><label for="mtn">Catatan (opsional)</label><textarea id="mtn" rows="2" maxlength="300" placeholder="Hal yang perlu disiapkan"></textarea></div>
+  <p class="sub">Setelah disimpan, Andra otomatis mendapat task untuk menghadiri meeting ini.</p>
+  <div class="err" id="merr" role="alert"></div><div class="acts"><button type="button" class="btn ghost" data-x>Batal</button><button class="btn" type="submit">Simpan meeting</button></div></form>`);
+  $('#mf').onsubmit = async e => {
+    e.preventDefault(); const b = e.target.querySelector('[type=submit]'); b.disabled = true;
+    try { await api('meetings', { method: 'POST', body: { title: $('#mtt').value, date: $('#mtd').value, time: $('#mtj').value, place: $('#mtp').value, note: $('#mtn').value } }); d.close(); toast('Meeting tersimpan. Task untuk Andra sudah dibuat'); await load(true); }
+    catch (er) { $('#merr').textContent = er.message; b.disabled = false; }
+  };
+  setTimeout(() => $('#mtt').focus(), 30);
+}
+function openMeet(id) {
+  const x = S.mods.meetings.find(y => y.id === id); if (!x) return; const ok = x.attend === 'done';
+  const d = dlgOpen(`<div class="dlg"><div class="dh"><h3>${esc(x.title)}</h3>${xBtn}</div><div class="meta"><span>${fmtMeet(x)}</span><span>${esc(x.place)}</span><span>Oleh ${esc(x.by)}</span></div>
+  ${x.note ? `<p style="white-space:pre-wrap">${esc(x.note)}</p>` : ''}<div class="meta"><span class="tag ${ok ? 'terkirim' : 'belum'}">${ok ? 'Sudah dihadiri Andra' : 'Menunggu Andra hadir'}</span></div>
+  <div class="acts"><button class="btn danger" id="del">Batalkan meeting</button><button class="btn ghost" data-x>Tutup</button></div></div>`);
+  twoStep($('#del'), async () => { try { await api('meetings/' + id, { method: 'DELETE' }); d.close(); toast('Meeting dibatalkan'); await load(true); } catch (er) { toast(er.message); } });
+}
+
 /* ---------- DETAIL ---------- */
 function compress(file) {
   return new Promise((res, rej) => {
@@ -534,7 +566,7 @@ async function openTask(id) {
   if (done) mid = '<p style="color:var(--mut)">Memuat bukti…</p>';
   else if (boss) mid = `<div class="empty">${t.pic ? 'Penanggung jawab: ' + esc(t.pic) + '. Menunggu bukti.' : 'Menunggu ' + esc(t.assignee) + ' mengisi penanggung jawab.'}</div>`;
   else if (!t.pic) mid = `<div><label for="pic">Siapa penanggung jawab task ini?</label><input type="text" id="pic" maxlength="60" placeholder="Nama penanggung jawab"></div>`;
-  else mid = dropHtml('t', 'Upload bukti') + `<div><label for="nt">Catatan (opsional)</label><textarea id="nt" rows="2" maxlength="500" placeholder="Tambahkan keterangan singkat"></textarea></div>`;
+  else mid = dropHtml('t', t.meetingId ? 'Upload bukti kehadiran' : 'Upload bukti') + `<div><label for="nt">Catatan (opsional)</label><textarea id="nt" rows="2" maxlength="500" placeholder="Tambahkan keterangan singkat"></textarea></div>`;
   const d = dlgOpen(`<div class="dlg"><div class="dh"><h3>${esc(t.title)}</h3><button class="x" data-x aria-label="Tutup">✕</button></div>
   ${!done && !boss ? `<div class="steps">${stp(1, 'Penanggung jawab', t.pic ? 'ok' : 'cur')}${stp(2, 'Bukti', t.pic ? 'cur' : '')}</div>` : ''}
   <div class="meta">${boss ? `<span>Untuk <b style="color:var(--ink)">${esc(t.assignee)}</b></span>` : ''}${t.pic ? `<span>PJ <b style="color:var(--ink)">${esc(t.pic)}</b></span>` : ''}<span class="tag ${t.priority}">${t.priority}</span>${t.deadline ? `<span class="${urgent(t) ? 'late' : ''}">${done ? 'Tenggat ' : dlabel(t) + ' · '}${fmtDate(t.deadline)}</span>` : ''}<span>${done ? 'Selesai' : 'Belum selesai'}</span></div>
