@@ -1,0 +1,566 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Papan Panitia</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='9' fill='%233550FF'/><path d='M9 17l5 5 9-11' stroke='white' stroke-width='3.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{color-scheme:light;--bg:#EEF1F5;--card:#fff;--ink:#0F1B2D;--mut:#5B6779;--line:#DCE2EA;--pri:#3550FF;--pri-d:#2238D6;--ok:#14935F;--okbg:#DDF5EA;--warn:#B9770E;--warnbg:#FFF1D6;--bad:#D6333A;--badbg:#FDE4E5;
+--r:14px;--disp:'Bricolage Grotesque',system-ui,sans-serif;--body:'Instrument Sans',system-ui,sans-serif}
+*{box-sizing:border-box;margin:0}
+html{-webkit-text-size-adjust:100%}
+body{font:400 15px/1.5 var(--body);background:var(--bg);color:var(--ink);min-height:100vh}
+button,input,textarea,select{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:3px solid var(--pri);outline-offset:2px}
+h1,h2,h3{font-family:var(--disp);letter-spacing:-.02em;line-height:1.1}
+.btn{border:0;background:var(--pri);color:#fff;padding:11px 18px;border-radius:11px;font-weight:600;transition:background .15s,transform .1s}
+.btn:hover{background:var(--pri-d)}.btn:active{transform:scale(.97)}
+.btn[disabled]{background:#B9C1D0;cursor:not-allowed;transform:none}
+.btn.ghost{background:transparent;color:var(--ink);border:1.5px solid var(--line)}.btn.ghost:hover{background:#fff}
+.btn.danger{background:var(--badbg);color:var(--bad)}.btn.danger:hover{background:#f9cfd1}
+.btn.sm{padding:7px 12px;font-size:13px;border-radius:9px}
+
+/* login */
+.login{min-height:100vh;display:grid;grid-template-columns:minmax(300px,5fr) 7fr}
+.login-brand{background:var(--ink);color:#fff;padding:48px;display:flex;flex-direction:column;justify-content:space-between;position:relative;overflow:hidden}
+.login-brand h1{font-size:clamp(38px,5vw,64px);font-weight:800;max-width:9ch}
+.login-brand p{color:#A9B6CC;max-width:34ch;margin-top:16px}
+.bars{display:flex;flex-direction:column;gap:10px;margin-top:40px}
+.bars i{display:block;height:14px;border-radius:99px;background:rgba(255,255,255,.1);position:relative;overflow:hidden}
+.bars i::after{content:"";position:absolute;inset:0;width:var(--w);background:var(--c);border-radius:99px;animation:grow 1.2s cubic-bezier(.2,.8,.2,1) both}
+@keyframes grow{from{width:0}}
+.login-main{padding:48px;display:flex;flex-direction:column;justify-content:center;max-width:720px}
+.login-main h2{font-size:28px;margin-bottom:6px}
+.tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:10px;margin:22px 0}
+.tile{background:#fff;border:2px solid transparent;border-radius:var(--r);padding:12px;display:flex;gap:11px;align-items:center;text-align:left;transition:border-color .15s,box-shadow .15s}
+.tile:hover{border-color:var(--line)}
+.tile[aria-pressed=true]{border-color:var(--pri);box-shadow:0 0 0 4px rgba(53,80,255,.12)}
+.tile b{display:block;font-weight:600;line-height:1.2}.tile small{color:var(--mut);font-size:12px;line-height:1.2;display:block}
+.av{width:40px;height:40px;border-radius:12px;flex:none;overflow:hidden;line-height:0}.av svg{display:block}
+.pwrow{display:flex;gap:10px;flex-wrap:wrap}
+.pwrow input{flex:1;min-width:200px}
+input[type=text],input[type=password],input[type=date],textarea,select{width:100%;border:1.5px solid var(--line);background:#fff;border-radius:11px;padding:11px 13px}
+input:focus,textarea:focus,select:focus{outline:none;border-color:var(--pri);box-shadow:0 0 0 4px rgba(53,80,255,.12)}
+.err{color:var(--bad);font-size:14px;min-height:21px;margin-top:8px}
+
+/* app shell */
+.top{display:flex;align-items:center;justify-content:space-between;padding:14px clamp(16px,4vw,40px);background:#fff;border-bottom:1px solid var(--line);position:sticky;top:0;z-index:5}
+.logo{display:flex;align-items:center;gap:10px;font:800 19px var(--disp)}
+.logo span{width:30px;height:30px;border-radius:9px;background:var(--pri);display:grid;place-items:center}
+.who{display:flex;align-items:center;gap:12px}
+.who .av{width:34px;height:34px;border-radius:10px;font-size:15px}
+.who div{line-height:1.2;text-align:right}.who small{color:var(--mut);font-size:12px}
+main{padding:clamp(16px,4vw,40px);max-width:1280px;margin:0 auto}
+.hero{display:flex;justify-content:space-between;align-items:flex-end;gap:24px;flex-wrap:wrap;margin-bottom:28px}
+.hero h2{font-size:clamp(30px,4.5vw,46px);font-weight:800}
+.hero p{color:var(--mut);margin-top:6px}
+.big{min-width:min(340px,100%);flex:1;max-width:460px}
+.big .row{display:flex;justify-content:space-between;font-weight:600;margin-bottom:8px}
+.bar{height:12px;background:#E3E8EF;border-radius:99px;overflow:hidden}
+.bar>b{display:block;height:100%;border-radius:99px;background:var(--c,var(--pri));width:var(--w);transition:width .7s cubic-bezier(.2,.8,.2,1)}
+.bar.lg{height:20px}
+
+/* jers grid */
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(310px,1fr));gap:16px}
+.person{background:var(--card);border-radius:18px;padding:18px;display:flex;flex-direction:column;gap:14px;border:1px solid var(--line)}
+.ph{display:flex;gap:12px;align-items:center}
+.ph h3{font-size:19px}.ph small{color:var(--mut)}
+.ph .btn{margin-left:auto}
+.pm{display:flex;justify-content:space-between;font-size:13px;color:var(--mut);margin-bottom:6px}.pm b{color:var(--ink)}
+.tl{list-style:none;padding:0;display:flex;flex-direction:column;gap:2px;min-height:60px}
+.trow{width:100%;display:flex;align-items:center;gap:10px;background:transparent;border:0;border-radius:10px;padding:8px;text-align:left}
+.trow:hover{background:#F2F5F9}
+.trow .t{flex:1;min-width:0}.trow .t span{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:500}
+.trow .t small{color:var(--mut);font-size:12px}
+.trow.done .t span{text-decoration:line-through;color:var(--mut)}
+.chk{width:22px;height:22px;border-radius:7px;border:2px solid #B9C1D0;flex:none;display:grid;place-items:center;color:#fff;transition:all .2s}
+.done .chk{background:var(--ok);border-color:var(--ok)}
+.empty{color:var(--mut);font-size:14px;padding:14px 8px;text-align:center;border:1.5px dashed var(--line);border-radius:12px}
+.more{font-size:12px;color:var(--mut);padding:2px 8px}
+.tag{font-size:11px;font-weight:600;padding:2px 8px;border-radius:99px;flex:none}
+.tag.new{background:var(--pri);color:#fff;animation:pulse 1.6s ease-in-out infinite}
+.tag.Mendesak{background:var(--badbg);color:var(--bad)}.tag.Penting{background:var(--warnbg);color:var(--warn)}.tag.Biasa{background:#E8ECF2;color:var(--mut)}
+@keyframes pulse{50%{box-shadow:0 0 0 5px rgba(53,80,255,.18)}}
+.late{color:var(--bad)!important;font-weight:600}
+
+/* member */
+.banner{display:flex;align-items:center;gap:14px;background:var(--pri);color:#fff;border-radius:16px;padding:14px 18px;margin-bottom:22px;width:100%;border:0;text-align:left;animation:drop .5s cubic-bezier(.2,.8,.2,1)}
+@keyframes drop{from{transform:translateY(-14px);opacity:0}}
+.banner svg{flex:none}.banner b{display:block}.banner span{opacity:.85;font-size:14px}
+.tabs{display:flex;gap:6px;margin:0 0 14px;flex-wrap:wrap}
+.tabs button{border:0;background:transparent;padding:8px 14px;border-radius:99px;font-weight:600;color:var(--mut)}
+.tabs button[aria-selected=true]{background:var(--ink);color:#fff}
+.tasks{display:flex;flex-direction:column;gap:10px}
+.task{background:#fff;border:1px solid var(--line);border-radius:16px;padding:6px}
+.task .trow{padding:12px}
+.task.isnew{border-color:var(--pri);box-shadow:0 0 0 3px rgba(53,80,255,.1)}
+
+/* dialog */
+dialog{margin:auto;background:#fff;color:var(--ink);border:0;border-radius:20px;padding:0;width:min(560px,calc(100% - 24px));max-height:92vh;box-shadow:0 30px 80px rgba(15,27,45,.3)}
+dialog::backdrop{background:rgba(15,27,45,.5);backdrop-filter:blur(3px)}
+.dlg{padding:24px;display:flex;flex-direction:column;gap:14px}
+.dlg h3{font-size:24px}
+.dlg label{font-weight:600;font-size:14px;display:block;margin-bottom:6px}
+.dh{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}
+.x{border:0;background:#EEF1F5;border-radius:10px;width:34px;height:34px;flex:none}
+.chips{display:flex;flex-wrap:wrap;gap:7px}
+.chip{border:1.5px solid var(--line);background:#fff;border-radius:99px;padding:6px 13px;font-weight:500;font-size:14px}
+.chip[aria-pressed=true]{background:var(--pri);border-color:var(--pri);color:#fff}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.drop{border:2px dashed #B9C1D0;border-radius:14px;padding:22px;text-align:center;color:var(--mut);cursor:pointer;display:block;transition:all .15s}
+.drop:hover,.drop.on{border-color:var(--pri);background:#F5F7FF}
+.drop input{display:none}
+.prev{width:100%;border-radius:12px;max-height:300px;object-fit:contain;background:#F2F5F9}
+.meta{display:flex;gap:8px;flex-wrap:wrap;align-items:center;color:var(--mut);font-size:14px}
+.acts{display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap}
+.toast{position:fixed;left:50%;bottom:24px;transform:translate(-50%,30px);background:var(--ink);color:#fff;padding:12px 20px;border-radius:12px;opacity:0;pointer-events:none;transition:all .35s cubic-bezier(.2,.8,.2,1);z-index:50;max-width:calc(100% - 32px)}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+@media(max-width:820px){.login{grid-template-columns:1fr}.login-brand{padding:28px}.bars{display:none}.login-main{padding:24px}.who div{display:none}.two{grid-template-columns:1fr}}
+/* Tampilan HP saja: satu kolom selebar ponsel, di tengah layar */
+html{background:#D5DBE5}
+#app{max-width:480px;margin:0 auto;min-height:100vh;background:var(--bg);box-shadow:0 0 0 1px var(--line);overflow-x:hidden}
+.login{grid-template-columns:1fr}
+.login-brand{padding:max(24px,env(safe-area-inset-top)) 22px 28px;gap:18px}
+.login-brand h1{font-size:38px;max-width:none}
+.login-brand p{margin-top:10px}
+.bars{display:none}
+.login-main{padding:22px;max-width:none}
+.tiles{grid-template-columns:1fr 1fr}
+.top{padding:10px 16px;padding-top:max(10px,env(safe-area-inset-top))}
+.who div{display:none}
+main{padding:16px 16px 40px}
+.hero{flex-direction:column;align-items:stretch;gap:16px;margin-bottom:20px}
+.hero h2{font-size:30px}
+.big{max-width:none;min-width:0}
+.hero .btn{width:100%;min-height:48px}
+.grid{grid-template-columns:1fr}
+input,textarea,select{font-size:16px}
+.btn{min-height:44px}.btn.sm{min-height:36px}
+.chip{padding:9px 14px}
+.tabs{overflow-x:auto;flex-wrap:nowrap}.tabs button{white-space:nowrap}
+dialog{width:calc(100% - 24px);max-width:456px}
+.dlg{padding:20px}
+.toast{bottom:max(24px,env(safe-area-inset-bottom))}
+.pnav{display:flex;gap:6px;overflow-x:auto;margin:0 0 18px;padding:4px;background:#E3E8EF;border-radius:14px}
+.pnav button{flex:1;border:0;background:transparent;padding:9px 14px;border-radius:10px;font-weight:600;color:var(--mut);white-space:nowrap}
+.pnav button[aria-current=true]{background:#fff;color:var(--ink);box-shadow:0 1px 3px rgba(15,27,45,.12)}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px}
+.stats div{background:#fff;border:1px solid var(--line);border-radius:14px;padding:10px;min-width:0}
+.stats small{display:block;color:var(--mut);font-size:12px}.stats b{font:700 14px var(--disp);word-break:break-word}
+.pos{color:var(--ok)}.neg{color:var(--bad)}
+.acts2{display:flex;gap:10px;margin-bottom:16px}.acts2 .btn{flex:1}
+.sgn{width:30px;height:30px;border-radius:10px;flex:none;display:grid;place-items:center;font:700 18px var(--disp)}
+.sgn.in{background:var(--okbg);color:var(--ok)}.sgn.out{background:var(--badbg);color:var(--bad)}
+.trow.ok .chk{background:var(--ok);border-color:var(--ok)}
+.tag.terkirim{background:var(--okbg);color:var(--ok)}.tag.belum{background:var(--warnbg);color:var(--warn)}
+.steps{display:flex;gap:16px;flex-wrap:wrap}
+.stp{display:inline-flex;align-items:center;gap:7px;font-size:13px;color:var(--mut);font-weight:600}
+.stp i{width:22px;height:22px;border-radius:99px;background:#E3E8EF;display:grid;place-items:center;font-style:normal;font-size:12px}
+.stp.ok i{background:var(--ok);color:#fff}.stp.cur{color:var(--ink)}.stp.cur i{background:var(--pri);color:#fff}
+.card{background:#fff;border:1px solid var(--line);border-radius:18px;padding:16px;margin-bottom:14px}
+.card h3{font-size:20px}.sub{color:var(--mut);font-size:13px}
+.row2{display:flex;justify-content:space-between;margin:12px 0 8px;font-weight:600}
+.tk{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:12px 0;border-top:1px solid var(--line);margin-top:12px}
+.tk .full{grid-column:1/-1}.tk label{font-size:12px;color:var(--mut);display:block;margin-bottom:4px;font-weight:500}
+.sumrow{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.card .acts{margin-top:6px}
+/* Perbaikan layout: cegah kartu melebar melewati layar */
+.grid{grid-template-columns:minmax(0,1fr)}
+.person,.person>*,.ph>div,.card,.task{min-width:0}
+.ph{flex-wrap:nowrap}.ph h3,.ph small{overflow-wrap:anywhere}
+.ph .btn{flex:none}
+.tl,.tl li{min-width:0}
+.trow{min-width:0;max-width:100%}
+.tk,.two{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+.stats{grid-template-columns:repeat(3,minmax(0,1fr))}
+.tk input,.two input,.two select{min-width:0}
+.empty{text-align:center;word-break:break-word}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<dialog id="dlg"></dialog>
+<dialog id="rem"></dialog>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+const $ = s => document.querySelector(s);
+const COLORS = ['#3550FF','#E5484D','#14935F','#B9770E','#8E4EC6','#0891B2','#D6409F','#4F5BD5','#E5742F'];
+const S = { token: null, me: null, users: [], tasks: [], tab: 'todo', page: 'task', mods: {}, bz: {}, sel: null, prevUnseen: null, sig: '' };
+try { S.token = localStorage.getItem('pp_token'); S.me = JSON.parse(localStorage.getItem('pp_me') || 'null'); } catch {}
+
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const colorOf = n => COLORS[Math.max(0, S.users.findIndex(u => u.name === n) >= 0 ? S.users.findIndex(u => u.name === n) : ['Jers','Andra','Tika','Sarah','Batara','Vany','Desya','Rena','Fitrah'].indexOf(n)) % 9];
+/* Avatar manusia per orang: [latar, kulit, rambut, gaya (short/long/bun/hijab), baju] */
+const AVS = {
+  Jers:['#C7D2FE','#E8B98F','#1F2937','short','#3550FF'],
+  Andra:['#FECACA','#C68642','#111827','short','#B91C1C'],
+  Tika:['#BBF7D0','#F1C9A5','#3B2314','long','#14935F'],
+  Sarah:['#FDE68A','#8D5524','#111827','bun','#B9770E'],
+  Batara:['#DDD6FE','#C68642','#2B1B12','short','#6D28D9'],
+  Vany:['#FBCFE8','#F1C9A5','#7C2D12','long','#BE185D'],
+  Desya:['#A5F3FC','#E8B98F','#0E7490','hijab','#0E7490'],
+  Rena:['#FED7AA','#D9A066','#92400E','bun','#C2410C'],
+  Fitrah:['#BFDBFE','#C68642','#111827','short','#1D4ED8']
+};
+/* Ikon per divisi: [warna, gambar ikon] */
+const DIV = {
+  Jers:['#3550FF','<circle cx="12" cy="12" r="10"/><path d="m16.24 7.76-2.12 6.36-6.36 2.12 2.12-6.36z"/>'],
+  Andra:['#D97706','<path d="m2 4 3 12h14l3-12-6 7-4-7-4 7-6-7zM5 20h14"/>'],
+  Tika:['#0891B2','<path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5z"/><path d="M14 2v6h6M16 13H8M16 17H8M10 9H8"/>'],
+  Sarah:['#14935F','<path d="M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1"/><path d="M3 5v14a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-4"/>'],
+  Batara:['#7C3AED','<path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2M12 19v3"/>'],
+  Vany:['#E5484D','<path d="m3 11 18-5v12L3 14z"/><path d="M11.6 16.8a3 3 0 1 1-5.8-1.6"/>'],
+  Desya:['#0F766E','<circle cx="12" cy="12" r="10"/><path d="M15 9.5c0-1.4-1.3-2.5-3-2.5s-3 1.1-3 2.5 1.3 2.2 3 2.5 3 1.1 3 2.5-1.300 2.500-3 2.500-3-1.100-3-2.500M12 5.500V7M12 17v1.500"/>'],
+  Rena:['#DB2777','<path d="M12 22a1 1 0 0 1 0-20 10 9 0 0 1 10 9 5 5 0 0 1-5 5h-2.250a1.750 1.750 0 0 0-1.400 2.800l.3.4A1.750 1.750 0 0 1 12 22z"/><circle cx="13.5" cy="6.5" r=".6"/><circle cx="17.5" cy="10.5" r=".6"/><circle cx="6.5" cy="12.5" r=".6"/><circle cx="8.5" cy="7.5" r=".6"/>'],
+  Aidil:['#EA580C','<path d="M3 2v7a2 2 0 0 0 2 2h4a2 2 0 0 0 2-2V2M7 2v20"/><path d="M21 15V2a5 5 0 0 0-5 5v6a2 2 0 0 0 2 2h3zm0 0v7"/>'],
+  Fitrah:['#475569','<path d="M11 21.730a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16V8a2 2 0 0 0-1-1.730l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.730z"/><path d="M12 22V12m-8.700-5 8.700 5 8.700-5M7.500 4.270l9 5.150"/>']
+};
+const av = n => { const [c, p] = DIV[n] || DIV.Jers; return `<div class="av" style="background:${c};display:grid;place-items:center" aria-hidden="true"><svg viewBox="0 0 24 24" width="58%" height="58%" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${p}</svg></div>`; };
+const avHuman = n => {
+  const [bg, sk, hr, st, sh] = AVS[n] || AVS.Jers;
+  const back = st === 'long' ? `<path d="M11 17c0-7 4-11 9-11s9 4 9 11v10h-4V17H15v10h-4z" fill="${hr}"/>` : st === 'hijab' ? `<path d="M9.5 19c0-9 4.5-13 10.5-13s10.5 4 10.5 13v9c0 3-3 4-5.5 4h-10c-2.5 0-5.5-1-5.5-4z" fill="${hr}"/>` : '';
+  const head = st === 'hijab' ? `<ellipse cx="20" cy="17" rx="6.5" ry="7.5" fill="${sk}"/>` : `<circle cx="20" cy="16.5" r="7.5" fill="${sk}"/>`;
+  const front = st === 'hijab' ? '' : `<path d="M12 16.5c0-6.5 3.5-9.5 8-9.5s8 3 8 9.5c-2-3.5-5-4.5-8-4.5s-6 1-8 4.5z" fill="${hr}"/>` + (st === 'bun' ? `<circle cx="20" cy="5.5" r="3.2" fill="${hr}"/>` : '');
+  return `<div class="av" aria-hidden="true"><svg viewBox="0 0 40 40" width="100%" height="100%"><rect width="40" height="40" fill="${bg}"/>${back}<rect x="17" y="22" width="6" height="8" fill="${sk}"/><path d="M5 40c0-8.5 6-12.5 15-12.5S35 31.5 35 40z" fill="${sh}"/>${head}<circle cx="17.4" cy="16.8" r=".9" fill="#1b1b1b"/><circle cx="22.6" cy="16.8" r=".9" fill="#1b1b1b"/><path d="M17.8 20c1.2 1 3.2 1 4.4 0" stroke="#1b1b1b" stroke-width=".9" fill="none" stroke-linecap="round"/>${front}</svg></div>`;
+};
+const CHECK = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5 9-10"/></svg>';
+const fmtDate = d => d ? new Date(d + 'T00:00').toLocaleDateString('id-ID', { day: 'numeric', month: 'short' }) : '';
+const late = t => t.status !== 'done' && t.deadline && new Date(t.deadline + 'T23:59') < new Date();
+const daysLeft = t => { if (!t.deadline) return null; const n = new Date(); n.setHours(0, 0, 0, 0); return Math.round((new Date(t.deadline + 'T00:00') - n) / 864e5); };
+const dlabel = t => { if (t.status === 'done') return 'Selesai'; const d = daysLeft(t); if (d === null) return 'Tanpa tenggat'; if (d < 0) return `Terlambat ${-d} hari`; if (d === 0) return 'Tenggat hari ini'; if (d === 1) return 'Tenggat besok'; if (d <= 3) return `Tenggat ${d} hari lagi`; return 'Tenggat ' + fmtDate(t.deadline); };
+const urgent = t => t.status !== 'done' && daysLeft(t) !== null && daysLeft(t) <= 3;
+const pct = (arr) => arr.length ? Math.round(arr.filter(t => t.status === 'done').length / arr.length * 100) : 0;
+const barColor = p => p >= 100 ? 'var(--ok)' : p >= 50 ? 'var(--pri)' : '#E5742F';
+
+function toast(msg) { const t = $('#toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(toast.h); toast.h = setTimeout(() => t.classList.remove('show'), 3800); }
+
+async function api(path, o = {}) {
+  let r;
+  try {
+    r = await fetch('/api/' + path, { method: o.method || 'GET', headers: { 'content-type': 'application/json', ...(S.token ? { authorization: 'Bearer ' + S.token } : {}) }, body: o.body ? JSON.stringify(o.body) : undefined });
+  } catch { throw new Error('Tidak bisa terhubung ke server. Cek koneksi internet.'); }
+  let d = {}; try { d = await r.json(); } catch {}
+  if (r.status === 401 && path !== 'login') { logout(); }
+  if (!r.ok) throw new Error(d.error || 'Terjadi kesalahan, coba lagi');
+  return d;
+}
+
+function logout() {
+  try { localStorage.removeItem('pp_token'); localStorage.removeItem('pp_me'); } catch {}
+  S.token = S.me = null; S.sel = null; S.remSig = ''; S.page = 'task'; S.bz = {}; S.prevUnseen = null; S.sig = ''; clearInterval(S.timer);
+  $('#dlg').open && $('#dlg').close();
+  renderLogin();
+}
+
+/* ---------- LOGIN ---------- */
+const ROSTER = [['Jers','Koordinator Steering'],['Andra','Ketua Panitia'],['Tika','Sekretaris Panitia'],['Sarah','Bendahara Panitia'],['Batara','Koord. Acara'],['Vany','Koord. Humas'],['Desya','Koord. Sponsor'],['Rena','Koord. Creative'],['Fitrah','Koord. Perlengkapan'],['Aidil','Koord. Konsumsi']];
+function renderLogin() {
+  if (!S.users.length) S.users = ROSTER.map(([name, role]) => ({ name, role }));
+  $('#app').innerHTML = `
+  <div class="login">
+    <section class="login-brand">
+      <div class="logo"><span>${CHECK.replace('width="14" height="14"','width="18" height="18" style="color:#fff"')}</span>Papan Panitia</div>
+      <div>
+        <h1>Semua task, satu papan.</h1>
+        <p>Jers memberi tugas, panitia mengerjakan dan mengirim bukti. Progres tiap orang terlihat langsung.</p>
+        <div class="bars" aria-hidden="true"><i style="--w:92%;--c:#14935F"></i><i style="--w:64%;--c:#3550FF"></i><i style="--w:38%;--c:#E5742F"></i></div>
+      </div>
+      <small style="color:#7C8AA3">Panitia Steering &amp; Pelaksana</small>
+    </section>
+    <section class="login-main">
+      <h2>Masuk sebagai siapa?</h2>
+      <p style="color:var(--mut)">Pilih namamu, lalu masukkan kata sandi.</p>
+      <div class="tiles" id="tiles">${S.users.map(u => `<button class="tile" data-n="${esc(u.name)}" aria-pressed="${S.sel === u.name}">${av(u.name)}<span><b>${esc(u.name)}</b><small>${esc(u.role)}</small></span></button>`).join('')}</div>
+      <form id="lf" class="pwrow" autocomplete="off">
+        <input type="password" id="pw" placeholder="Kata sandi" aria-label="Kata sandi" autocomplete="current-password">
+        <button class="btn" type="submit">Masuk</button>
+      </form>
+      <div class="err" id="lerr" role="alert"></div>
+    </section>
+  </div>`;
+  $('#tiles').onclick = e => { const b = e.target.closest('.tile'); if (!b) return; S.sel = b.dataset.n; document.querySelectorAll('.tile').forEach(t => t.setAttribute('aria-pressed', t.dataset.n === S.sel)); $('#pw').focus(); };
+  $('#lf').onsubmit = async e => {
+    e.preventDefault();
+    if (!S.sel) return $('#lerr').textContent = 'Pilih namamu dulu.';
+    const btn = e.target.querySelector('button'); btn.disabled = true; $('#lerr').textContent = '';
+    try {
+      const d = await api('login', { method: 'POST', body: { name: S.sel, password: $('#pw').value } });
+      S.token = d.token; S.me = d.user;
+      try { localStorage.setItem('pp_token', d.token); localStorage.setItem('pp_me', JSON.stringify(d.user)); } catch {}
+      boot();
+    } catch (er) { $('#lerr').textContent = er.message; btn.disabled = false; }
+  };
+}
+
+/* ---------- DATA ---------- */
+async function load(first) {
+  const d = await api('state');
+  S.users = d.users; S.tasks = d.tasks; S.mods = d.mods || {};
+  if (!S.me.boss) {
+    const unseen = d.tasks.filter(t => !t.seen).length;
+    if (S.prevUnseen !== null && unseen > S.prevUnseen) toast(`Ada ${unseen - S.prevUnseen} task baru dari Jers`);
+    S.prevUnseen = unseen;
+    document.title = (unseen ? `(${unseen}) ` : '') + 'Papan Panitia';
+  }
+  const sig = JSON.stringify([d.tasks, d.mods]);
+  if (first || sig !== S.sig) { S.sig = sig; render(); }
+  if (!S.me.boss) remind();
+}
+function remind() {
+  const due = S.tasks.filter(urgent).sort((a, b) => daysLeft(a) - daysLeft(b));
+  const sig = due.map(t => t.id + ':' + daysLeft(t)).join('|');
+  const r = $('#rem');
+  if (!due.length || sig === S.remSig || r.open || $('#dlg').open) return;
+  S.remSig = sig;
+  r.innerHTML = `<div class="dlg"><div class="dh"><h3>Pengingat tenggat</h3><button class="x" data-x aria-label="Tutup">✕</button></div><p style="color:var(--mut)">${due.length} task segera jatuh tempo. Selesaikan dan kirim buktinya.</p><ul class="tl">${due.map(t => `<li><button class="trow" data-r="${t.id}"><span class="chk" style="border-color:var(--bad)"></span><span class="t"><span>${esc(t.title)}</span><small class="late">${dlabel(t)} · ${fmtDate(t.deadline)}</small></span></button></li>`).join('')}</ul><div class="acts"><button class="btn" data-x>Mengerti</button></div></div>`;
+  r.querySelectorAll('[data-x]').forEach(b => b.onclick = () => r.close());
+  r.querySelectorAll('[data-r]').forEach(b => b.onclick = () => { r.close(); openTask(b.dataset.r); });
+  r.showModal();
+}
+function boot() {
+  $('#app').innerHTML = '<main><p style="color:var(--mut)">Memuat…</p></main>';
+  load(true).then(() => { clearInterval(S.timer); S.timer = setInterval(() => load().catch(() => {}), 6000); }).catch(e => { toast(e.message); });
+}
+
+/* ---------- SHELL ---------- */
+function shell(inner) {
+  return `<header class="top"><div class="logo"><span>${CHECK.replace('width="14" height="14"','width="16" height="16" style="color:#fff"')}</span>Papan Panitia</div>
+  <div class="who">${av(S.me.name)}<div><b>${esc(S.me.name)}</b><br><small>${esc(S.me.role)}</small></div><button class="btn ghost sm" id="lo">Keluar</button></div></header><main>${inner}</main>`;
+}
+function render() {
+  const pg = pagesFor(); if (!pg.some(x => x[0] === S.page)) S.page = 'task';
+  const inner = navHtml(pg) + (S.page === 'fin' ? finView() : S.page === 'sponsors' ? spView() : S.page === 'bazaar' ? bzView() : S.me.boss ? jersView() : memberView());
+  $('#app').innerHTML = shell(inner);
+  $('#lo').onclick = logout;
+  document.querySelectorAll('[data-pg]').forEach(b => b.onclick = () => { S.page = b.dataset.pg; render(); window.scrollTo(0, 0); });
+  if (S.page === 'fin') bindFin(); else if (S.page === 'sponsors') bindSp(); else if (S.page === 'bazaar') bindBz(); else S.me.boss ? bindJers() : bindMember();
+}
+
+/* ---------- JERS ---------- */
+function jersView() {
+  const members = S.users.filter(u => !u.boss);
+  const p = pct(S.tasks);
+  return `<div class="hero"><div><h2>Halo, Jers</h2><p>${S.tasks.length} task diberikan, ${S.tasks.filter(t => t.status === 'done').length} sudah selesai.</p></div>
+  <div class="big"><div class="row"><span>Progres seluruh panitia</span><span>${p}%</span></div><div class="bar lg" style="--w:${p}%;--c:${barColor(p)}"><b></b></div></div>
+  <button class="btn" id="newT">+ Beri task</button></div>
+  <div class="grid">${members.map(u => {
+    const mine = S.tasks.filter(t => t.assignee === u.name), pp = pct(mine), latest = mine.slice(0, 5);
+    return `<article class="person"><div class="ph">${av(u.name)}<div><h3>${esc(u.name)}</h3><small>${esc(u.role)}</small></div><button class="btn ghost sm" data-add="${esc(u.name)}" aria-label="Beri task ke ${esc(u.name)}">+ Task</button></div>
+    <div><div class="pm"><span>Progres</span><span><b>${mine.filter(t => t.status === 'done').length}/${mine.length}</b> selesai</span></div><div class="bar" style="--w:${pp}%;--c:${barColor(pp)}"><b></b></div></div>
+    <ul class="tl">${latest.length ? latest.map(t => `<li><button class="trow ${t.status === 'done' ? 'done' : ''}" data-t="${t.id}"><span class="chk">${t.status === 'done' ? CHECK : ''}</span><span class="t"><span>${esc(t.title)}</span><small class="${urgent(t) ? 'late' : ''}">${dlabel(t)}${t.status !== 'done' ? (t.pic ? ' · PJ ' + esc(t.pic) : (t.seen ? ' · belum ada PJ' : ' · belum dilihat')) : ''}</small></span></button></li>`).join('') : '<li class="empty">Belum ada task. Beri task pertama.</li>'}</ul>
+    ${mine.length > 5 ? `<div class="more">+${mine.length - 5} task lebih lama</div>` : ''}</article>`;
+  }).join('')}</div>`;
+}
+function bindJers() {
+  $('#newT').onclick = () => openCreate([]);
+  document.querySelectorAll('[data-add]').forEach(b => b.onclick = () => openCreate([b.dataset.add]));
+  document.querySelectorAll('[data-t]').forEach(b => b.onclick = () => openTask(b.dataset.t));
+}
+function openCreate(pre) {
+  const members = S.users.filter(u => !u.boss); let picked = new Set(pre);
+  const d = $('#dlg');
+  d.innerHTML = `<form class="dlg" id="cf"><div class="dh"><h3>Beri task baru</h3><button type="button" class="x" data-x aria-label="Tutup">✕</button></div>
+  <div><label for="ct">Judul task</label><input type="text" id="ct" maxlength="120" required placeholder="Contoh: Kirim proposal ke 5 sponsor"></div>
+  <div><label for="cd">Detail (opsional)</label><textarea id="cd" rows="3" placeholder="Jelaskan hasil yang diharapkan"></textarea></div>
+  <div class="two"><div><label for="cdl">Tenggat (panitia diingatkan mulai H-3)</label><input type="date" id="cdl" min="${new Date(Date.now() - new Date().getTimezoneOffset() * 6e4).toISOString().slice(0, 10)}"></div><div><label for="cp">Prioritas</label><select id="cp"><option>Biasa</option><option>Penting</option><option>Mendesak</option></select></div></div>
+  <div><label>Untuk siapa?</label><div class="chips" id="chips"><button type="button" class="chip" data-all>Semua panitia</button>${members.map(u => `<button type="button" class="chip" data-n="${esc(u.name)}">${esc(u.name)}</button>`).join('')}</div></div>
+  <div class="err" id="cerr" role="alert"></div>
+  <div class="acts"><button type="button" class="btn ghost" data-x>Batal</button><button class="btn" type="submit">Kirim task</button></div></form>`;
+  const sync = () => { d.querySelectorAll('.chip[data-n]').forEach(c => c.setAttribute('aria-pressed', picked.has(c.dataset.n))); d.querySelector('[data-all]').setAttribute('aria-pressed', picked.size === members.length); };
+  sync();
+  d.querySelector('#chips').onclick = e => { const c = e.target.closest('.chip'); if (!c) return; if (c.hasAttribute('data-all')) picked = picked.size === members.length ? new Set() : new Set(members.map(m => m.name)); else picked.has(c.dataset.n) ? picked.delete(c.dataset.n) : picked.add(c.dataset.n); sync(); };
+  d.querySelectorAll('[data-x]').forEach(b => b.onclick = () => d.close());
+  d.querySelector('#cf').onsubmit = async e => {
+    e.preventDefault(); const btn = e.target.querySelector('[type=submit]'); btn.disabled = true;
+    try {
+      const r = await api('tasks', { method: 'POST', body: { title: $('#ct').value, desc: $('#cd').value, deadline: $('#cdl').value, priority: $('#cp').value, assignees: [...picked] } });
+      d.close(); toast(`Task terkirim ke ${r.count} panitia`); await load(true);
+    } catch (er) { $('#cerr').textContent = er.message; btn.disabled = false; }
+  };
+  d.showModal(); setTimeout(() => $('#ct').focus(), 30);
+}
+
+/* ---------- MEMBER ---------- */
+function memberView() {
+  const p = pct(S.tasks), unseen = S.tasks.filter(t => !t.seen);
+  const list = S.tasks.filter(t => S.tab === 'all' || (S.tab === 'todo' ? t.status !== 'done' : t.status === 'done'));
+  return `${unseen.length ? `<button class="banner" id="bn"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0112 0c0 7 3 9 3 9H3s3-2 3-9M10.3 21a1.94 1.94 0 003.4 0"/></svg><span><b>${unseen.length} task baru dari Jers</b><span>Ketuk untuk melihat</span></span></button>` : ''}
+  <div class="hero"><div><h2>Halo, ${esc(S.me.name)}</h2><p>${esc(S.me.role)} · ${S.tasks.filter(t => t.status !== 'done').length} task belum selesai</p></div>
+  <div class="big"><div class="row"><span>Progresmu</span><span>${S.tasks.filter(t => t.status === 'done').length}/${S.tasks.length} · ${p}%</span></div><div class="bar lg" style="--w:${p}%;--c:${barColor(p)}"><b></b></div></div></div>
+  <div class="tabs" role="tablist">${[['todo','Belum selesai'],['done','Selesai'],['all','Semua']].map(([k, l]) => `<button role="tab" data-tab="${k}" aria-selected="${S.tab === k}">${l}</button>`).join('')}</div>
+  <div class="tasks">${list.length ? list.map(t => `<div class="task ${!t.seen ? 'isnew' : ''}"><button class="trow ${t.status === 'done' ? 'done' : ''}" data-t="${t.id}"><span class="chk">${t.status === 'done' ? CHECK : ''}</span><span class="t"><span>${esc(t.title)}</span><small class="${urgent(t) ? 'late' : ''}">${dlabel(t)}${t.deadline && t.status !== 'done' ? ' · ' + fmtDate(t.deadline) : ''}${t.status !== 'done' && !t.pic ? ' · isi PJ dulu' : ''}</small></span>${!t.seen ? '<span class="tag new">Baru</span>' : ''}<span class="tag ${t.priority}">${t.priority}</span></button></div>`).join('') : `<div class="empty">${S.tab === 'done' ? 'Belum ada task yang selesai.' : S.tasks.length ? 'Semua task sudah selesai. Kerja bagus!' : 'Belum ada task dari Jers.'}</div>`}</div>`;
+}
+function bindMember() {
+  document.querySelectorAll('[data-tab]').forEach(b => b.onclick = () => { S.tab = b.dataset.tab; render(); });
+  document.querySelectorAll('[data-t]').forEach(b => b.onclick = () => openTask(b.dataset.t));
+  const bn = $('#bn'); if (bn) bn.onclick = () => { const t = S.tasks.find(x => !x.seen); if (t) openTask(t.id); };
+}
+
+/* ---------- MODUL: helper ---------- */
+const rp = n => 'Rp' + Math.round(Number(n) || 0).toLocaleString('id-ID');
+const n0 = v => Number(String(v).replace(/\D/g, '')) || 0;
+const fmtTs = ts => new Date(ts).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' });
+const pagesFor = () => [['task', 'Task']].concat(S.mods.fin ? [['fin', 'Keuangan']] : [], S.mods.sponsors ? [['sponsors', 'Sponsor']] : [], S.mods.bazaar ? [['bazaar', 'Bazar']] : []);
+const navHtml = pg => pg.length > 1 ? `<nav class="pnav">${pg.map(([k, l]) => `<button data-pg="${k}" aria-current="${S.page === k}">${l}</button>`).join('')}</nav>` : '';
+const barHtml = (p, lg) => `<div class="bar ${lg ? 'lg' : ''}" style="--w:${Math.min(100, p)}%;--c:${barColor(p)}"><b></b></div>`;
+const dropHtml = (i, l) => `<label class="drop" id="upz-${i}"><input type="file" accept="image/*" id="upf-${i}"><div id="upt-${i}"><b style="color:var(--ink)">${l}</b><br>Foto atau screenshot</div></label>`;
+function bindDrop(i, box) {
+  $('#upf-' + i).onchange = async e => {
+    const f = e.target.files[0]; if (!f) return;
+    try { box.v = await compress(f); $('#upt-' + i).innerHTML = `<img class="prev" alt="Pratinjau" src="${box.v}"><small>Ketuk untuk ganti gambar</small>`; $('#upz-' + i).classList.add('on'); box.on && box.on(); }
+    catch (er) { box.v = null; toast(er.message); }
+  };
+}
+function dlgOpen(html) { const d = $('#dlg'); d.innerHTML = html; if (!d.open) d.showModal(); d.querySelectorAll('[data-x]').forEach(b => b.onclick = () => d.close()); return d; }
+function twoStep(b, fn) { const l = b.textContent; b.onclick = () => { if (!b.dataset.sure) { b.dataset.sure = '1'; b.textContent = 'Yakin? Klik lagi'; setTimeout(() => { b.dataset.sure = ''; b.textContent = l; }, 4000); return; } fn(); }; }
+const xBtn = '<button type="button" class="x" data-x aria-label="Tutup">✕</button>';
+
+/* ---------- KEUANGAN ---------- */
+function finView() {
+  const f = S.mods.fin, E = f.entries, sum = t => E.filter(e => e.type === t).reduce((a, e) => a + e.amount, 0);
+  const inn = sum('in'), out = sum('out'), saldo = inn - out, p = Math.max(0, Math.round(saldo / f.target * 100));
+  return `<div class="hero"><div><h2>Keuangan</h2><p>Target dana ${rp(f.target)}${p >= 100 ? ' · tercapai 🎉' : ''}</p></div><div class="big"><div class="row"><span>Dana saat ini</span><span>${rp(saldo)} · ${p}%</span></div>${barHtml(p, 1)}</div></div>
+  <div class="stats"><div><small>Pemasukan</small><b class="pos">${rp(inn)}</b></div><div><small>Pengeluaran</small><b class="neg">${rp(out)}</b></div><div><small>Saldo</small><b>${rp(saldo)}</b></div></div>
+  <div class="acts2"><button class="btn" id="fin-in">+ Pemasukan</button><button class="btn ghost" id="fin-out">− Pengeluaran</button></div>
+  <div class="tasks">${E.length ? E.map(e => `<div class="task"><button class="trow" data-e="${e.id}"><span class="sgn ${e.type}">${e.type === 'in' ? '+' : '−'}</span><span class="t"><span>${esc(e.purpose)}</span><small>${fmtTs(e.createdAt)} · ${esc(e.by)}${e.hasNota ? ' · ada nota' : ''}</small></span><b class="${e.type === 'in' ? 'pos' : 'neg'}">${e.type === 'in' ? '+' : '−'}${rp(e.amount)}</b></button></div>`).join('') : '<div class="empty">Belum ada catatan. Mulai dengan mencatat pemasukan.</div>'}</div>`;
+}
+function bindFin() {
+  $('#fin-in').onclick = () => openFin('in'); $('#fin-out').onclick = () => openFin('out');
+  document.querySelectorAll('[data-e]').forEach(b => b.onclick = () => openEntry(b.dataset.e));
+}
+function openFin(type) {
+  const out = type === 'out', box = {};
+  const d = dlgOpen(`<form class="dlg" id="ff"><div class="dh"><h3>${out ? 'Catat pengeluaran' : 'Catat pemasukan'}</h3>${xBtn}</div>
+  <div><label for="fa">Jumlah (Rp)</label><input type="text" inputmode="numeric" id="fa" placeholder="50000" autocomplete="off"></div>
+  <div><label for="fp">Keperluan</label><input type="text" id="fp" maxlength="120" placeholder="${out ? 'Contoh: Beli kertas dan spidol' : 'Contoh: Iuran panitia'}"></div>
+  ${dropHtml('n', out ? 'Upload nota (wajib)' : 'Upload nota (opsional)')}
+  <div class="err" id="ferr" role="alert"></div><div class="acts"><button type="button" class="btn ghost" data-x>Batal</button><button class="btn" type="submit">Simpan</button></div></form>`);
+  bindDrop('n', box);
+  $('#ff').onsubmit = async e => {
+    e.preventDefault(); const amount = n0($('#fa').value);
+    if (!amount) return $('#ferr').textContent = 'Isi jumlah uang dengan angka';
+    if (out && !box.v) return $('#ferr').textContent = 'Pengeluaran wajib upload nota';
+    const b = e.target.querySelector('[type=submit]'); b.disabled = true;
+    try { await api('fin', { method: 'POST', body: { type, amount, purpose: $('#fp').value, nota: box.v || null } }); d.close(); toast(out ? 'Pengeluaran tercatat' : 'Pemasukan tercatat'); await load(true); }
+    catch (er) { $('#ferr').textContent = er.message; b.disabled = false; }
+  };
+  setTimeout(() => $('#fa').focus(), 30);
+}
+function openEntry(id) {
+  const e = S.mods.fin.entries.find(x => x.id === id); if (!e) return;
+  const d = dlgOpen(`<div class="dlg"><div class="dh"><h3>${esc(e.purpose)}</h3>${xBtn}</div><div class="meta"><b class="${e.type === 'in' ? 'pos' : 'neg'}">${e.type === 'in' ? '+' : '−'}${rp(e.amount)}</b><span>${e.type === 'in' ? 'Pemasukan' : 'Pengeluaran'}</span><span>${fmtTs(e.createdAt)} · ${esc(e.by)}</span></div>
+  <div id="nf">${e.hasNota ? '<p style="color:var(--mut)">Memuat nota…</p>' : '<div class="empty">Tanpa nota.</div>'}</div>
+  <div class="acts"><button class="btn danger" id="del">Hapus catatan</button><button class="btn ghost" data-x>Tutup</button></div></div>`);
+  if (e.hasNota) api('file/nota/' + id).then(r => $('#nf').innerHTML = r.file ? `<img class="prev" alt="Nota" src="${r.file}">` : '<div class="empty">Nota tidak tersedia.</div>').catch(er => $('#nf').innerHTML = `<div class="empty">${esc(er.message)}</div>`);
+  twoStep($('#del'), async () => { try { await api('fin/' + id, { method: 'DELETE' }); d.close(); toast('Catatan dihapus'); await load(true); } catch (er) { toast(er.message); } });
+}
+
+/* ---------- SPONSOR ---------- */
+function spView() {
+  const L = S.mods.sponsors, sent = L.filter(x => x.status === 'terkirim').length, p = L.length ? Math.round(sent / L.length * 100) : 0;
+  return `<div class="hero"><div><h2>Sponsor</h2><p>${sent} dari ${L.length} proposal terkirim</p></div><div class="big"><div class="row"><span>Progres pengiriman</span><span>${p}%</span></div>${barHtml(p, 1)}</div><button class="btn" id="sp-add">+ Tambah sponsor</button></div>
+  <div class="tasks">${L.length ? L.map(x => { const ok = x.status === 'terkirim'; return `<div class="task"><button class="trow ${ok ? 'ok' : ''}" data-s="${x.id}"><span class="chk">${ok ? CHECK : ''}</span><span class="t"><span>${esc(x.name)}</span><small>${esc(x.note || 'Tanpa catatan')}</small></span><span class="tag ${x.status}">${ok ? 'Terkirim' : 'Belum'}</span></button></div>`; }).join('') : '<div class="empty">Belum ada sponsor. Tambahkan calon sponsor pertama.</div>'}</div>`;
+}
+function bindSp() { $('#sp-add').onclick = openSpAdd; document.querySelectorAll('[data-s]').forEach(b => b.onclick = () => openSp(b.dataset.s)); }
+function openSpAdd() {
+  const d = dlgOpen(`<form class="dlg" id="sf"><div class="dh"><h3>Tambah sponsor</h3>${xBtn}</div><div><label for="sn">Nama sponsor</label><input type="text" id="sn" maxlength="80" placeholder="Contoh: Kopi Senja"></div><div><label for="sc">Catatan (opsional)</label><input type="text" id="sc" maxlength="200" placeholder="Contoh: kirim lewat email"></div><div class="err" id="serr" role="alert"></div><div class="acts"><button type="button" class="btn ghost" data-x>Batal</button><button class="btn" type="submit">Simpan</button></div></form>`);
+  $('#sf').onsubmit = async e => { e.preventDefault(); try { await api('sponsors', { method: 'POST', body: { name: $('#sn').value, note: $('#sc').value } }); d.close(); toast('Sponsor ditambahkan'); await load(true); } catch (er) { $('#serr').textContent = er.message; } };
+  setTimeout(() => $('#sn').focus(), 30);
+}
+function openSp(id) {
+  const x = S.mods.sponsors.find(y => y.id === id); if (!x) return; const sent = x.status === 'terkirim', box = {};
+  const d = dlgOpen(`<div class="dlg"><div class="dh"><h3>${esc(x.name)}</h3>${xBtn}</div><div class="meta"><span class="tag ${x.status}">${sent ? 'Terkirim' : 'Belum terkirim'}</span>${x.note ? `<span>${esc(x.note)}</span>` : ''}${sent ? `<span>${fmtTs(x.sentAt)} · ${esc(x.sentBy)}</span>` : ''}</div>
+  <div id="spf">${sent ? '<p style="color:var(--mut)">Memuat bukti…</p>' : dropHtml('s', 'Upload bukti pengiriman')}</div><div class="err" id="serr" role="alert"></div>
+  <div class="acts"><button class="btn danger" id="del">Hapus</button>${sent ? '<button class="btn ghost" id="rs">Ubah ke belum</button>' : '<button class="btn" id="sent" disabled>Tandai terkirim</button>'}</div></div>`);
+  const go = async (p, o, msg) => { try { await api(p, o); d.close(); toast(msg); await load(true); } catch (er) { $('#serr').textContent = er.message; } };
+  twoStep($('#del'), () => go('sponsors/' + id, { method: 'DELETE' }, 'Sponsor dihapus'));
+  if (sent) { api('file/sp/' + id).then(r => $('#spf').innerHTML = r.file ? `<img class="prev" alt="Bukti pengiriman" src="${r.file}">` : '<div class="empty">Bukti tidak tersedia.</div>').catch(() => {}); $('#rs').onclick = () => go(`sponsors/${id}/reset`, { method: 'POST' }, 'Status diubah ke belum'); }
+  else { bindDrop('s', box); box.on = () => { $('#sent').disabled = false; }; $('#sent').onclick = () => go(`sponsors/${id}/send`, { method: 'POST', body: { proof: box.v } }, 'Ditandai terkirim'); }
+}
+
+/* ---------- BAZAR ---------- */
+function bzDraft(k) { if (!S.bz[k]) { const s = S.mods.bazaar[k]; S.bz[k] = { tickets: s.tickets.length ? s.tickets.map(t => ({ ...t })) : [{ name: 'Tiket reguler', price: 0, sold: 0 }], extra: s.extra, extraNote: s.extraNote }; } return S.bz[k]; }
+const bzTotal = dr => dr.tickets.reduce((a, t) => a + t.price * t.sold, 0) + dr.extra;
+function bzView() {
+  return `<div class="hero"><div><h2>Bazar</h2><p>Isi harga tiket dan jumlah terjual. Totalnya dihitung otomatis.</p></div></div>` + Object.entries(S.mods.bazaar).map(([k, b]) => {
+    const dr = bzDraft(k), tot = bzTotal(dr), p = Math.round(tot / b.target * 100), at = (f, i) => `data-bz data-k="${k}" ${i === undefined ? '' : `data-i="${i}"`} data-f="${f}"`;
+    return `<section class="card"><h3>${esc(b.name)}</h3><div class="sub">Target ${rp(b.target)}</div>
+    <div class="row2"><span>Terkumpul <b id="bt-${k}">${rp(tot)}</b></span><span id="bp-${k}">${p}%</span></div><div id="bb-${k}">${barHtml(p, 1)}</div>
+    ${dr.tickets.map((t, i) => `<div class="tk"><div class="full"><label>Jenis tiket</label><input type="text" ${at('name', i)} value="${esc(t.name)}" maxlength="40"></div><div><label>Harga tiket (Rp)</label><input type="text" inputmode="numeric" ${at('price', i)} value="${t.price || ''}" placeholder="0"></div><div><label>Terjual (lembar)</label><input type="text" inputmode="numeric" ${at('sold', i)} value="${t.sold || ''}" placeholder="0"></div><div class="full sub sumrow"><span id="bs-${k}-${i}">${rp(t.price)} × ${t.sold} = <b>${rp(t.price * t.sold)}</b></span>${dr.tickets.length > 1 ? `<button class="btn ghost sm" data-rm="${k}:${i}">Hapus</button>` : ''}</div></div>`).join('')}
+    <button class="btn ghost sm" data-addt="${k}">+ Jenis tiket</button>
+    <div class="tk"><div><label>Tambahan keuntungan (Rp)</label><input type="text" inputmode="numeric" ${at('extra')} value="${dr.extra || ''}" placeholder="0"></div><div><label>Dari mana?</label><input type="text" ${at('extraNote')} value="${esc(dr.extraNote)}" maxlength="200" placeholder="Contoh: stan makanan"></div></div>
+    <div class="acts"><button class="btn" data-save="${k}">Simpan ${esc(b.name.toLowerCase())}</button></div></section>`;
+  }).join('');
+}
+function bindBz() {
+  $('#app').oninput = e => {
+    const el = e.target; if (!el.hasAttribute('data-bz')) return;
+    const k = el.dataset.k, dr = S.bz[k], f = el.dataset.f;
+    if (f === 'extra') dr.extra = n0(el.value); else if (f === 'extraNote') dr.extraNote = el.value;
+    else { const t = dr.tickets[+el.dataset.i]; t[f] = f === 'name' ? el.value : n0(el.value); $(`#bs-${k}-${el.dataset.i}`).innerHTML = `${rp(t.price)} × ${t.sold} = <b>${rp(t.price * t.sold)}</b>`; }
+    const tot = bzTotal(dr), p = Math.round(tot / S.mods.bazaar[k].target * 100), bar = $(`#bb-${k} .bar`);
+    $(`#bt-${k}`).textContent = rp(tot); $(`#bp-${k}`).textContent = p + '%'; bar.style.setProperty('--w', Math.min(100, p) + '%'); bar.style.setProperty('--c', barColor(p));
+  };
+  document.querySelectorAll('[data-addt]').forEach(b => b.onclick = () => { const dr = bzDraft(b.dataset.addt); if (dr.tickets.length < 10) dr.tickets.push({ name: 'Tiket baru', price: 0, sold: 0 }); render(); });
+  document.querySelectorAll('[data-rm]').forEach(b => b.onclick = () => { const [k, i] = b.dataset.rm.split(':'); bzDraft(k).tickets.splice(+i, 1); render(); });
+  document.querySelectorAll('[data-save]').forEach(b => b.onclick = async () => {
+    const k = b.dataset.save; b.disabled = true;
+    try { await api('bazaar/' + k, { method: 'POST', body: S.bz[k] }); delete S.bz[k]; toast('Data bazar tersimpan'); await load(true); }
+    catch (er) { toast(er.message); } b.disabled = false;
+  });
+}
+
+/* ---------- DETAIL ---------- */
+function compress(file) {
+  return new Promise((res, rej) => {
+    const img = new Image(), url = URL.createObjectURL(file);
+    img.onload = () => { const k = Math.min(1, 1280 / Math.max(img.width, img.height)), c = document.createElement('canvas'); c.width = img.width * k; c.height = img.height * k; c.getContext('2d').drawImage(img, 0, 0, c.width, c.height); URL.revokeObjectURL(url); res(c.toDataURL('image/jpeg', .78)); };
+    img.onerror = () => rej(new Error('File harus berupa gambar (JPG, PNG, atau screenshot)'));
+    img.src = url;
+  });
+}
+async function openTask(id) {
+  const t = S.tasks.find(x => x.id === id); if (!t) return;
+  const boss = S.me.boss, done = t.status === 'done', box = {};
+  const stp = (n, l, c) => `<span class="stp ${c}"><i>${c === 'ok' ? '✓' : n}</i>${l}</span>`;
+  let mid;
+  if (done) mid = '<p style="color:var(--mut)">Memuat bukti…</p>';
+  else if (boss) mid = `<div class="empty">${t.pic ? 'Penanggung jawab: ' + esc(t.pic) + '. Menunggu bukti.' : 'Menunggu ' + esc(t.assignee) + ' mengisi penanggung jawab.'}</div>`;
+  else if (!t.pic) mid = `<div><label for="pic">Siapa penanggung jawab task ini?</label><input type="text" id="pic" maxlength="60" placeholder="Nama penanggung jawab"></div>`;
+  else mid = dropHtml('t', 'Upload bukti') + `<div><label for="nt">Catatan (opsional)</label><textarea id="nt" rows="2" maxlength="500" placeholder="Tambahkan keterangan singkat"></textarea></div>`;
+  const d = dlgOpen(`<div class="dlg"><div class="dh"><h3>${esc(t.title)}</h3><button class="x" data-x aria-label="Tutup">✕</button></div>
+  ${!done && !boss ? `<div class="steps">${stp(1, 'Penanggung jawab', t.pic ? 'ok' : 'cur')}${stp(2, 'Bukti', t.pic ? 'cur' : '')}</div>` : ''}
+  <div class="meta">${boss ? `<span>Untuk <b style="color:var(--ink)">${esc(t.assignee)}</b></span>` : ''}${t.pic ? `<span>PJ <b style="color:var(--ink)">${esc(t.pic)}</b></span>` : ''}<span class="tag ${t.priority}">${t.priority}</span>${t.deadline ? `<span class="${urgent(t) ? 'late' : ''}">${done ? 'Tenggat ' : dlabel(t) + ' · '}${fmtDate(t.deadline)}</span>` : ''}<span>${done ? 'Selesai' : 'Belum selesai'}</span></div>
+  ${t.desc ? `<p style="white-space:pre-wrap">${esc(t.desc)}</p>` : ''}
+  <div id="pf">${mid}</div><div class="err" id="terr" role="alert"></div>
+  <div class="acts">${boss ? '<button class="btn danger" id="del">Hapus task</button>' : (!done ? (t.pic ? '<button class="btn" id="fin" disabled>Kirim bukti &amp; tandai selesai</button>' : '<button class="btn" id="savepic">Simpan penanggung jawab</button>') : '')}<button class="btn ghost" data-x>Tutup</button></div></div>`);
+
+  if (!boss && !t.seen) { api(`tasks/${id}/seen`, { method: 'POST' }).then(() => { t.seen = true; S.prevUnseen = S.tasks.filter(x => !x.seen).length; document.title = 'Papan Panitia'; S.sig = JSON.stringify([S.tasks, S.mods]); render(); }).catch(() => {}); }
+  if (done) api(`tasks/${id}/proof`).then(r => { $('#pf').innerHTML = (r.proof ? `<img class="prev" alt="Bukti pengerjaan" src="${r.proof}">` : '<div class="empty">Bukti tidak tersedia.</div>') + (t.note ? `<p style="margin-top:10px"><b>Catatan:</b> ${esc(t.note)}</p>` : ''); }).catch(e => $('#pf').innerHTML = `<div class="empty">${esc(e.message)}</div>`);
+  if (boss) twoStep($('#del'), async () => { try { await api('tasks/' + id, { method: 'DELETE' }); d.close(); toast('Task dihapus'); await load(true); } catch (e) { $('#terr').textContent = e.message; } });
+  if (!boss && !done && !t.pic) {
+    $('#savepic').onclick = async e => { e.target.disabled = true; try { await api(`tasks/${id}/pic`, { method: 'POST', body: { pic: $('#pic').value } }); toast('Penanggung jawab tersimpan. Lanjut upload bukti'); await load(true); openTask(id); } catch (er) { $('#terr').textContent = er.message; e.target.disabled = false; } };
+    setTimeout(() => $('#pic') && $('#pic').focus(), 30);
+  }
+  if (!boss && !done && t.pic) {
+    bindDrop('t', box); box.on = () => { $('#fin').disabled = false; };
+    $('#fin').onclick = async e => {
+      e.target.disabled = true; e.target.textContent = 'Mengirim…';
+      try { await api(`tasks/${id}/complete`, { method: 'POST', body: { proof: box.v, note: $('#nt').value } }); d.close(); toast('Task selesai. Bukti terkirim ke Jers'); await load(true); }
+      catch (er) { $('#terr').textContent = er.message; e.target.disabled = false; e.target.innerHTML = 'Kirim bukti &amp; tandai selesai'; }
+    };
+  }
+}
+['#dlg', '#rem'].forEach(s => $(s).addEventListener('click', e => { if (e.target === e.currentTarget) e.currentTarget.close(); }));
+
+S.token && S.me ? boot() : renderLogin();
+</script>
+</body>
+</html>
