@@ -14,7 +14,7 @@ const USERS = [
 ];
 // Siapa yang boleh membuka menu (ubah di sini bila perlu)
 const ACCESS = { fin: ["Sarah", "Jers"], sponsors: ["Desya", "Jers"], bazaar: ["Desya", "Jers"] };
-const FIN_TARGET = 300000;
+const FIN_TARGET = 300000000;
 const BZ = { b1: { name: "Bazar pertama", target: 10000000 }, b2: { name: "Bazar kedua", target: 20000000 } };
 // Kata sandi awal: nama huruf kecil + 123. Ubah lewat env var PW_JERS, PW_ANDRA, dst.
 const pwOf = (n, env) => (env && env["PW_" + n.toUpperCase()]) || n.toLowerCase() + "123";
@@ -36,11 +36,13 @@ async function handle({ method: m, path, body, token, env, anyPw }, s) {
     if (!me) return err("Sesi habis, silakan masuk lagi", 401);
 
     const db = (await s.get("db", { type: "json" })) || {};
-    db.tasks ||= []; db.fin ||= []; db.sponsors ||= []; db.bazaar ||= {};
+    db.tasks ||= []; db.meetings ||= []; db.fin ||= []; db.sponsors ||= []; db.bazaar ||= {};
     const save = () => s.setJSON("db", db);
     const can = (k) => ACCESS[k].includes(me.name);
     const img = (v) => typeof v === "string" && v.startsWith("data:image/") && v.length <= 4e6;
     const uid = () => crypto.randomUUID();
+    const isCoord = /^Koord\./.test(me.role);
+    const ketua = USERS.find((u) => u.role === "Ketua Panitia").name;
 
     if (path[0] === "state" && m === "GET") {
       const tasks = (me.boss ? db.tasks : db.tasks.filter((t) => t.assignee === me.name)).sort((a, b) => b.createdAt - a.createdAt);
@@ -48,6 +50,9 @@ async function handle({ method: m, path, body, token, env, anyPw }, s) {
       if (can("fin")) mods.fin = { target: FIN_TARGET, entries: [...db.fin].sort((a, b) => b.createdAt - a.createdAt) };
       if (can("sponsors")) mods.sponsors = [...db.sponsors].sort((a, b) => b.createdAt - a.createdAt);
       if (can("bazaar")) mods.bazaar = Object.fromEntries(Object.entries(BZ).map(([k, v]) => [k, { ...v, tickets: [], extra: 0, extraNote: "", ...(db.bazaar[k] || {}) }]));
+      if (isCoord || me.boss) mods.meetings = db.meetings.filter((x) => me.boss || x.by === me.name)
+        .map((x) => ({ ...x, attend: (db.tasks.find((t) => t.id === x.taskId) || {}).status || "todo" }))
+        .sort((a, b) => (a.date + a.time).localeCompare(b.date + b.time));
       return R({ users: USERS, tasks, mods });
     }
 
@@ -99,6 +104,39 @@ async function handle({ method: m, path, body, token, env, anyPw }, s) {
         if (!me.boss) return err("Hanya Jers yang bisa menghapus task", 403);
         db.tasks = db.tasks.filter((x) => x.id !== t.id);
         await s.delete("proof/" + t.id);
+        await save();
+        return R({ ok: true });
+      }
+    }
+
+    // ---- Meeting (otomatis membuat task hadir untuk Ketua Panitia) ----
+    if (path[0] === "meetings") {
+      if (!path[1] && m === "POST") {
+        if (!isCoord) return err("Hanya koordinator yang bisa set up meeting", 403);
+        const title = String(body.title || "").trim().slice(0, 100), place = String(body.place || "").trim().slice(0, 120);
+        const date = /^\d{4}-\d{2}-\d{2}$/.test(body.date || "") ? body.date : "";
+        const time = /^\d{2}:\d{2}$/.test(body.time || "") ? body.time : "";
+        if (!title) return err("Isi agenda meeting");
+        if (!date) return err("Pilih tanggal meeting");
+        if (!time) return err("Isi jam meeting");
+        if (!place) return err("Isi tempat atau link meeting");
+        const note = String(body.note || "").slice(0, 300), mid = uid(), tid = uid();
+        db.meetings.push({ id: mid, title, date, time, place, note, by: me.name, createdAt: Date.now(), taskId: tid });
+        db.tasks.push({
+          id: tid, title: "Hadiri meeting: " + title,
+          desc: `Meeting ${me.role} (${me.name})\nTanggal: ${date}, pukul ${time}\nTempat: ${place}` + (note ? "\nCatatan: " + note : ""),
+          assignee: ketua, deadline: date, priority: "Penting", status: "todo", seen: false, pic: "", meetingId: mid, createdAt: Date.now(),
+        });
+        await save();
+        return R({ ok: true });
+      }
+      const mt = db.meetings.find((x) => x.id === path[1]);
+      if (!mt) return err("Meeting tidak ditemukan", 404);
+      if (m === "DELETE") {
+        if (!me.boss && mt.by !== me.name) return err("Tidak diizinkan", 403);
+        const t = db.tasks.find((x) => x.id === mt.taskId);
+        if (t && t.status !== "done") db.tasks = db.tasks.filter((x) => x.id !== t.id);
+        db.meetings = db.meetings.filter((x) => x.id !== mt.id);
         await save();
         return R({ ok: true });
       }
