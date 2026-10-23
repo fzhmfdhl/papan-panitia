@@ -115,7 +115,7 @@ async function handle({ method: m, path, body, token, env, anyPw }, s) {
     if (path[0] === "letters") {
       const isSek = me.name === sekName;
       const cl = (b, k, n) => String(b[k] || "").trim().slice(0, n);
-      const fields = (b) => ({ perihal: cl(b, "perihal", 150), kepada: cl(b, "kepada", 150), tujuan: cl(b, "tujuan", 400), hari: cl(b, "hari", 100), pukul: cl(b, "pukul", 60), tempat: cl(b, "tempat", 100) });
+      const fields = (b) => ({ perihal: cl(b, "perihal", 150), kepada: cl(b, "kepada", 150), tujuan: cl(b, "tujuan", 600), hari: cl(b, "hari", 100), pukul: cl(b, "pukul", 60), tempat: cl(b, "tempat", 100) });
       const bad = (f) => (!f.perihal ? "Isi perihal surat" : !f.kepada ? "Isi kepada siapa surat ditujukan" : !f.tujuan ? "Isi tujuan surat" : null);
       if (!path[1] && m === "POST") {
         const f = fields(body), e = bad(f);
