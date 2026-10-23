@@ -13,7 +13,7 @@ const USERS = [
   { name: "Aidil", role: "Koord. Konsumsi" },
 ];
 // Siapa yang boleh membuka menu (ubah di sini bila perlu)
-const ACCESS = { fin: ["Sarah", "Jers"], sponsors: ["Desya", "Jers"], bazaar: ["Desya", "Jers"] };
+const ACCESS = { fin: ["Sarah", "Jers"], sponsors: ["Desya", "Jers"], bazaar: ["Desya", "Jers"], media: ["Vany", "Jers"] };
 const FIN_TARGET = 300000000;
 const BZ = { b1: { name: "Bazar pertama", target: 10000000 }, b2: { name: "Bazar kedua", target: 20000000 } };
 // Kata sandi awal: nama huruf kecil + 123. Ubah lewat env var PW_JERS, PW_ANDRA, dst.
@@ -36,7 +36,7 @@ async function handle({ method: m, path, body, token, env, anyPw }, s) {
     if (!me) return err("Sesi habis, silakan masuk lagi", 401);
 
     const db = (await s.get("db", { type: "json" })) || {};
-    db.tasks ||= []; db.letters ||= []; db.meetings ||= []; db.fin ||= []; db.sponsors ||= []; db.bazaar ||= {};
+    db.tasks ||= []; db.media ||= []; db.letters ||= []; db.meetings ||= []; db.fin ||= []; db.sponsors ||= []; db.bazaar ||= {};
     const save = () => s.setJSON("db", db);
     const can = (k) => ACCESS[k].includes(me.name);
     const img = (v) => typeof v === "string" && v.startsWith("data:image/") && v.length <= 4e6;
@@ -51,6 +51,7 @@ async function handle({ method: m, path, body, token, env, anyPw }, s) {
       if (can("fin")) mods.fin = { target: FIN_TARGET, entries: [...db.fin].sort((a, b) => b.createdAt - a.createdAt) };
       if (can("sponsors")) mods.sponsors = [...db.sponsors].sort((a, b) => b.createdAt - a.createdAt);
       if (can("bazaar")) mods.bazaar = Object.fromEntries(Object.entries(BZ).map(([k, v]) => [k, { ...v, tickets: [], extra: 0, extraNote: "", ...(db.bazaar[k] || {}) }]));
+      if (can("media")) mods.media = [...db.media].sort((a, b) => b.createdAt - a.createdAt);
       mods.letters = (me.boss || me.name === sekName ? db.letters : db.letters.filter((x) => x.by === me.name)).sort((a, b) => b.createdAt - a.createdAt);
       if (isCoord || me.boss) mods.meetings = db.meetings.filter((x) => me.boss || x.by === me.name)
         .map((x) => ({ ...x, attend: (db.tasks.find((t) => t.id === x.taskId) || {}).status || "todo" }))
@@ -106,6 +107,41 @@ async function handle({ method: m, path, body, token, env, anyPw }, s) {
         if (!me.boss) return err("Hanya Jers yang bisa menghapus task", 403);
         db.tasks = db.tasks.filter((x) => x.id !== t.id);
         await s.delete("proof/" + t.id);
+        await save();
+        return R({ ok: true });
+      }
+    }
+
+    // ---- Media partner (Humas) ----
+    if (path[0] === "media") {
+      if (!can("media")) return err("Tidak diizinkan", 403);
+      const JENIS = ["Instagram", "Radio", "TV", "Online", "Komunitas", "Lainnya"], ST = ["belum", "dihubungi", "bersedia", "menolak"];
+      const cl = (k, n) => String(body[k] || "").trim().slice(0, n);
+      const fl = () => ({ name: cl("name", 80), jenis: JENIS.includes(body.jenis) ? body.jenis : "Lainnya", kontak: cl("kontak", 120), note: cl("note", 200) });
+      if (!path[1] && m === "POST") {
+        const x = fl();
+        if (!x.name) return err("Isi nama media");
+        db.media.push({ id: uid(), ...x, status: "belum", by: me.name, createdAt: Date.now(), updatedAt: Date.now() });
+        await save();
+        return R({ ok: true });
+      }
+      const md = db.media.find((x) => x.id === path[1]);
+      if (!md) return err("Media tidak ditemukan", 404);
+      if (path[2] === "update" && m === "POST") {
+        const x = fl();
+        if (!x.name) return err("Isi nama media");
+        Object.assign(md, x, { updatedAt: Date.now() });
+        await save();
+        return R({ ok: true });
+      }
+      if (path[2] === "status" && m === "POST") {
+        if (!ST.includes(body.status)) return err("Status tidak dikenal");
+        Object.assign(md, { status: body.status, updatedAt: Date.now() });
+        await save();
+        return R({ ok: true });
+      }
+      if (!path[2] && m === "DELETE") {
+        db.media = db.media.filter((x) => x.id !== md.id);
         await save();
         return R({ ok: true });
       }
