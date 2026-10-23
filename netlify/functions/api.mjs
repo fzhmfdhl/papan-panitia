@@ -36,13 +36,14 @@ async function handle({ method: m, path, body, token, env, anyPw }, s) {
     if (!me) return err("Sesi habis, silakan masuk lagi", 401);
 
     const db = (await s.get("db", { type: "json" })) || {};
-    db.tasks ||= []; db.meetings ||= []; db.fin ||= []; db.sponsors ||= []; db.bazaar ||= {};
+    db.tasks ||= []; db.letters ||= []; db.meetings ||= []; db.fin ||= []; db.sponsors ||= []; db.bazaar ||= {};
     const save = () => s.setJSON("db", db);
     const can = (k) => ACCESS[k].includes(me.name);
     const img = (v) => typeof v === "string" && v.startsWith("data:image/") && v.length <= 4e6;
     const uid = () => crypto.randomUUID();
     const isCoord = /^Koord\./.test(me.role);
     const ketua = USERS.find((u) => u.role === "Ketua Panitia").name;
+    const sekName = USERS.find((u) => u.role === "Sekretaris Panitia").name;
 
     if (path[0] === "state" && m === "GET") {
       const tasks = (me.boss ? db.tasks : db.tasks.filter((t) => t.assignee === me.name)).sort((a, b) => b.createdAt - a.createdAt);
@@ -50,6 +51,7 @@ async function handle({ method: m, path, body, token, env, anyPw }, s) {
       if (can("fin")) mods.fin = { target: FIN_TARGET, entries: [...db.fin].sort((a, b) => b.createdAt - a.createdAt) };
       if (can("sponsors")) mods.sponsors = [...db.sponsors].sort((a, b) => b.createdAt - a.createdAt);
       if (can("bazaar")) mods.bazaar = Object.fromEntries(Object.entries(BZ).map(([k, v]) => [k, { ...v, tickets: [], extra: 0, extraNote: "", ...(db.bazaar[k] || {}) }]));
+      mods.letters = (me.boss || me.name === sekName ? db.letters : db.letters.filter((x) => x.by === me.name)).sort((a, b) => b.createdAt - a.createdAt);
       if (isCoord || me.boss) mods.meetings = db.meetings.filter((x) => me.boss || x.by === me.name)
         .map((x) => ({ ...x, attend: (db.tasks.find((t) => t.id === x.taskId) || {}).status || "todo" }))
         .sort((a, b) => (a.date + a.time).localeCompare(b.date + b.time));
@@ -109,6 +111,65 @@ async function handle({ method: m, path, body, token, env, anyPw }, s) {
       }
     }
 
+    // ---- Surat (diajukan semua orang, disetujui & dinomori sekretaris) ----
+    if (path[0] === "letters") {
+      const isSek = me.name === sekName;
+      const cl = (b, k, n) => String(b[k] || "").trim().slice(0, n);
+      const fields = (b) => ({ perihal: cl(b, "perihal", 150), kepada: cl(b, "kepada", 150), tujuan: cl(b, "tujuan", 400), hari: cl(b, "hari", 100), pukul: cl(b, "pukul", 60), tempat: cl(b, "tempat", 100) });
+      const bad = (f) => (!f.perihal ? "Isi perihal surat" : !f.kepada ? "Isi kepada siapa surat ditujukan" : !f.tujuan ? "Isi tujuan surat" : null);
+      if (!path[1] && m === "POST") {
+        const f = fields(body), e = bad(f);
+        if (e) return err(e);
+        db.letters.push({ id: uid(), ...f, by: me.name, status: "diajukan", nomor: "", lampiran: "-", note: "", createdAt: Date.now(), updatedAt: Date.now() });
+        await save();
+        return R({ ok: true });
+      }
+      const Lt = db.letters.find((x) => x.id === path[1]);
+      if (!Lt) return err("Surat tidak ditemukan", 404);
+      const own = Lt.by === me.name, open = Lt.status === "diajukan" || Lt.status === "revisi";
+      if (!own && !isSek) return err("Tidak diizinkan", 403);
+      if (path[2] === "update" && m === "POST") {
+        if (!own || !open) return err("Surat tidak bisa diubah");
+        const f = fields(body), e = bad(f);
+        if (e) return err(e);
+        Object.assign(Lt, f, { status: "diajukan", note: "", updatedAt: Date.now() });
+        await save();
+        return R({ ok: true });
+      }
+      if (path[2] === "approve" && m === "POST") {
+        if (!isSek) return err("Hanya sekretaris yang bisa menyetujui", 403);
+        const f = fields(body), e = bad(f);
+        if (e) return err(e);
+        const nomor = cl(body, "nomor", 80);
+        if (!nomor) return err("Isi nomor surat");
+        if (db.letters.some((x) => x.id !== Lt.id && x.nomor && x.nomor.toLowerCase() === nomor.toLowerCase())) return err("Nomor surat sudah dipakai surat lain");
+        Object.assign(Lt, f, { nomor, lampiran: cl(body, "lampiran", 40) || "-", status: "disetujui", note: "", approvedAt: Date.now(), updatedAt: Date.now() });
+        await save();
+        return R({ ok: true });
+      }
+      if (path[2] === "revise" && m === "POST") {
+        if (!isSek) return err("Hanya sekretaris yang bisa meminta revisi", 403);
+        const note = cl(body, "note", 300);
+        if (!note) return err("Tulis catatan revisi");
+        Object.assign(Lt, { status: "revisi", note, updatedAt: Date.now() });
+        await save();
+        return R({ ok: true });
+      }
+      if (path[2] === "signed" && m === "POST") {
+        if (!isSek) return err("Hanya sekretaris", 403);
+        if (Lt.status !== "disetujui") return err("Surat belum disetujui");
+        Object.assign(Lt, { status: "ditandatangani", updatedAt: Date.now() });
+        await save();
+        return R({ ok: true });
+      }
+      if (!path[2] && m === "DELETE") {
+        if (!isSek && !(own && open)) return err("Surat tidak bisa dihapus", 403);
+        db.letters = db.letters.filter((x) => x.id !== Lt.id);
+        await save();
+        return R({ ok: true });
+      }
+    }
+
     // ---- Meeting (otomatis membuat task hadir untuk Ketua Panitia) ----
     if (path[0] === "meetings") {
       if (!path[1] && m === "POST") {
@@ -147,11 +208,16 @@ async function handle({ method: m, path, body, token, env, anyPw }, s) {
       if (!can("fin")) return err("Tidak diizinkan", 403);
       if (!path[1] && m === "POST") {
         const type = body.type === "out" ? "out" : "in";
+        const kind = type === "out" && body.kind === "nota" ? "nota" : "kuitansi";
+        const date = /^\d{4}-\d{2}-\d{2}$/.test(body.date || "") ? body.date : "";
+        const nomor = String(body.nomor || "").trim().slice(0, 60);
         const amount = num(body.amount), purpose = String(body.purpose || "").trim().slice(0, 120);
+        if (!date) return err("Pilih hari dan tanggal");
+        if (!nomor) return err(`Isi nomor ${kind === "nota" ? "nota" : "kuitansi"} (ketik - jika tidak ada)`);
+        if (!purpose) return err("Isi uraiannya");
         if (!amount) return err("Isi jumlah uang dengan angka");
-        if (!purpose) return err("Isi keperluannya");
-        if (type === "out" && !img(body.nota)) return err("Pengeluaran wajib upload nota");
-        const e = { id: uid(), type, amount, purpose, by: me.name, createdAt: Date.now(), hasNota: false };
+        if (type === "out" && !img(body.nota)) return err(`Pengeluaran wajib upload foto ${kind === "nota" ? "nota" : "kuitansi"}`);
+        const e = { id: uid(), type, kind, date, nomor, amount, purpose, by: me.name, createdAt: Date.now(), hasNota: false };
         if (img(body.nota)) { await s.set("nota/" + e.id, body.nota); e.hasNota = true; }
         db.fin.push(e);
         await save();
