@@ -349,11 +349,11 @@ function shell(inner) {
 }
 function render() {
   const pg = pagesFor(); if (!pg.some(x => x[0] === S.page)) S.page = 'task';
-  const inner = navHtml(pg) + (S.page === 'letters' ? letView() : S.page === 'rekap' ? rekapView() : S.page === 'meetings' ? meetView() : S.page === 'fin' ? finView() : S.page === 'sponsors' ? spView() : S.page === 'bazaar' ? bzView() : S.me.boss ? jersView() : memberView());
+  const inner = navHtml(pg) + (S.page === 'media' ? mediaView() : S.page === 'letters' ? letView() : S.page === 'rekap' ? rekapView() : S.page === 'meetings' ? meetView() : S.page === 'fin' ? finView() : S.page === 'sponsors' ? spView() : S.page === 'bazaar' ? bzView() : S.me.boss ? jersView() : memberView());
   $('#app').innerHTML = shell(inner);
   $('#lo').onclick = logout;
   document.querySelectorAll('[data-pg]').forEach(b => b.onclick = () => { S.page = b.dataset.pg; render(); window.scrollTo(0, 0); });
-  if (S.page === 'letters') bindLet(); else if (S.page === 'rekap') bindRekap(); else if (S.page === 'meetings') bindMeet(); else if (S.page === 'fin') bindFin(); else if (S.page === 'sponsors') bindSp(); else if (S.page === 'bazaar') bindBz(); else S.me.boss ? bindJers() : bindMember();
+  if (S.page === 'media') bindMedia(); else if (S.page === 'letters') bindLet(); else if (S.page === 'rekap') bindRekap(); else if (S.page === 'meetings') bindMeet(); else if (S.page === 'fin') bindFin(); else if (S.page === 'sponsors') bindSp(); else if (S.page === 'bazaar') bindBz(); else S.me.boss ? bindJers() : bindMember();
 }
 
 /* ---------- JERS ---------- */
@@ -638,13 +638,15 @@ function storyFor(key) {
   const open = S.tasks.filter(t => mkey(t.createdAt) <= key && (t.status !== 'done' || mkey(t.doneAt) > key)).slice(0, 3);
   const meets = (S.mods.meetings || []).filter(x => x.by === nm && mkey(x.createdAt) === key);
   const sps = (S.mods.sponsors || []).filter(x => x.status === 'terkirim' && x.sentAt && mkey(x.sentAt) === key);
-  if (!done.length && !meets.length && !sps.length) return `Pada bulan ${bulan}, ${nm} yang bertugas sebagai ${role} belum memiliki pekerjaan yang tercatat selesai.${open.length ? ` Beberapa pekerjaan, seperti ${joinId(open.map(t => '“' + lc(t.title) + '”'))}, masih dalam proses dan akan dilanjutkan pada bulan berikutnya.` : ''}`;
+  const mp = (S.mods.media || []).filter(x => x.status === 'bersedia' && x.updatedAt && mkey(x.updatedAt) === key);
+  if (!done.length && !meets.length && !sps.length && !mp.length) return `Pada bulan ${bulan}, ${nm} yang bertugas sebagai ${role} belum memiliki pekerjaan yang tercatat selesai.${open.length ? ` Beberapa pekerjaan, seperti ${joinId(open.map(t => '“' + lc(t.title) + '”'))}, masih dalam proses dan akan dilanjutkan pada bulan berikutnya.` : ''}`;
   const out = [`Sepanjang bulan ${bulan}, ${nm} menjalankan perannya sebagai ${role}${given ? ` dan menerima ${given} tugas dari Koordinator Steering` : ''}${done.length ? `, dengan ${done.length} tugas berhasil diselesaikan` : ''}.`];
   const CON = ['Pada awal bulan', 'Setelah itu', 'Kemudian', 'Selanjutnya', 'Di sela-sela kegiatan tersebut', 'Tidak lama setelahnya'];
   done.forEach((t, i) => { const con = i === 0 ? 'Pada awal bulan' : (i === done.length - 1 && done.length > 2) ? 'Menjelang akhir bulan' : CON[1 + ((i - 1) % 5)];
     out.push(`${con}, ${nm} mengerjakan tugas “${lc(t.title)}”${t.pic && t.pic !== nm ? ` bersama penanggung jawab ${t.pic}` : ''} ${['hingga selesai dan melaporkannya lengkap dengan bukti.', 'dan menuntaskannya dengan bukti pengerjaan.', 'sampai selesai lalu melaporkan hasilnya kepada Koordinator Steering.'][i % 3]}`); });
   if (meets.length) out.push(`Di samping itu, ${nm} mengatur ${meets.length} meeting koordinasi, yaitu ${joinId(meets.map(x => '“' + lc(x.title) + '”'))}.`);
   if (sps.length) out.push(`Di bidang sponsorship, ${sps.length} proposal berhasil dikirimkan kepada ${joinId(sps.slice(0, 5).map(x => x.name))}.`);
+  if (mp.length) out.push(`Di bidang humas, ${mp.length} media partner berhasil digandeng, yaitu ${joinId(mp.slice(0, 5).map(x => x.name))}.`);
   if (open.length) out.push(`Beberapa pekerjaan lain, seperti ${joinId(open.map(t => '“' + lc(t.title) + '”'))}, masih berjalan dan akan dilanjutkan pada bulan berikutnya.`);
   return out.join(' ');
 }
@@ -668,7 +670,7 @@ function bindRekap() {
 const rp = n => 'Rp' + Math.round(Number(n) || 0).toLocaleString('id-ID');
 const n0 = v => Number(String(v).replace(/\D/g, '')) || 0;
 const fmtTs = ts => new Date(ts).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' });
-const pagesFor = () => [['task', 'Task']].concat(S.mods.meetings ? [['meetings', 'Meeting']] : [], [['letters', 'Surat']], canRekap() ? [['rekap', 'Rekap']] : [], S.mods.fin ? [['fin', 'Keuangan']] : [], S.mods.sponsors ? [['sponsors', 'Sponsor']] : [], S.mods.bazaar ? [['bazaar', 'Bazar']] : []);
+const pagesFor = () => [['task', 'Task']].concat(S.mods.meetings ? [['meetings', 'Meeting']] : [], [['letters', 'Surat']], canRekap() ? [['rekap', 'Rekap']] : [], S.mods.fin ? [['fin', 'Keuangan']] : [], S.mods.sponsors ? [['sponsors', 'Sponsor']] : [], S.mods.media ? [['media', 'Media']] : [], S.mods.bazaar ? [['bazaar', 'Bazar']] : []);
 const navBadge = k => { if (k !== 'letters') return ''; const n = letPending(); return n ? `<span class="bdg">${n}</span>` : ''; };
 const navHtml = pg => `${isSek() && letPending() && S.page !== 'letters' ? `<button class="banner" data-pg="letters"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16v16H4zM4 8l8 5 8-5"/></svg><span><b>${letPending()} permintaan surat menunggu</b><span>Ketuk untuk memeriksa dan memberi nomor</span></span></button>` : ''}<nav class="pnav">${pg.map(([k, l]) => `<button data-pg="${k}" aria-current="${S.page === k}">${l}${navBadge(k)}</button>`).join('')}</nav>`;
 const barHtml = (p, lg) => `<div class="bar ${lg ? 'lg' : ''}" style="--w:${Math.min(100, p)}%;--c:${barColor(p)}"><b></b></div>`;
@@ -783,6 +785,35 @@ async function unduhRekapKeuangan() {
   const bytes = await buatXlsx(sheets), url = URL.createObjectURL(new Blob([bytes], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }));
   const a = document.createElement('a'); a.href = url; a.download = 'Rekap-Keuangan-' + todayIso() + '.xlsx'; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(url), 10000);
   if (window.self !== window.top) toast('Jika file tidak terunduh: unduhan dibatasi di halaman prototipe. Buka di situs Netlify.');
+}
+
+/* ---------- MEDIA PARTNER ---------- */
+const MST = { belum: ['belum', 'Belum dihubungi'], dihubungi: ['Biasa', 'Sudah dihubungi'], bersedia: ['terkirim', 'Bersedia'], menolak: ['Mendesak', 'Menolak'] };
+const MJENIS = ['Instagram', 'Radio', 'TV', 'Online', 'Komunitas', 'Lainnya'];
+function mediaView() {
+  const L = S.mods.media, ok = L.filter(x => x.status === 'bersedia').length, p = L.length ? Math.round(ok / L.length * 100) : 0;
+  return `<div class="hero"><div><h2>Media partner</h2><p>${ok} dari ${L.length} media bersedia bekerja sama</p></div><div class="big"><div class="row"><span>Media yang bersedia</span><span>${p}%</span></div>${barHtml(p, 1)}</div><button class="btn" id="md-add">+ Tambah media</button></div>
+  <div class="tasks">${L.length ? L.map(x => { const [c, l] = MST[x.status] || MST.belum; return `<div class="task"><button class="trow" data-md="${x.id}"><span class="sgn in" style="background:#FDE4E5;color:var(--bad)">📣</span><span class="t"><span>${esc(x.name)}</span><small>${esc(x.jenis)} · ${esc(x.kontak || 'tanpa kontak')}</small></span><span class="tag ${c}">${l}</span></button></div>`; }).join('') : '<div class="empty">Belum ada media partner. Tambahkan media pertama.</div>'}</div>`;
+}
+function bindMedia() { $('#md-add').onclick = () => openMedia(); document.querySelectorAll('[data-md]').forEach(b => b.onclick = () => openMedia(b.dataset.md)); }
+function openMedia(id) {
+  const x = id ? S.mods.media.find(y => y.id === id) : null; if (id && !x) return;
+  const v = x || { name: '', jenis: 'Instagram', kontak: '', note: '', status: 'belum' };
+  const d = dlgOpen(`<div class="dlg"><div class="dh"><h3>${x ? 'Detail media' : 'Tambah media partner'}</h3>${xBtn}</div>
+  ${x ? `<div><label>Status</label><div class="chips" id="mst">${Object.entries(MST).map(([k, [, l]]) => `<button type="button" class="chip" data-s="${k}" aria-pressed="${x.status === k}">${l}</button>`).join('')}</div></div>` : ''}
+  <div><label for="mn">Nama media</label><input type="text" id="mn" maxlength="80" value="${esc(v.name)}" placeholder="Contoh: Radio Kampus FM"></div>
+  <div><label for="mj">Jenis</label><select id="mj">${MJENIS.map(j => `<option ${j === v.jenis ? 'selected' : ''}>${j}</option>`).join('')}</select></div>
+  <div><label for="mk">Kontak</label><input type="text" id="mk" maxlength="120" value="${esc(v.kontak)}" placeholder="Instagram, WhatsApp, atau email"></div>
+  <div><label for="mc">Catatan (opsional)</label><input type="text" id="mc" maxlength="200" value="${esc(v.note)}" placeholder="Contoh: kirim proposal lewat DM"></div>
+  <div class="err" id="merr" role="alert"></div><div class="acts">${x ? '<button class="btn danger" id="del">Hapus</button>' : ''}<button class="btn" id="md-save">Simpan</button></div></div>`);
+  const body = () => ({ name: $('#mn').value, jenis: $('#mj').value, kontak: $('#mk').value, note: $('#mc').value });
+  const go = async (p, o, msg) => { try { await api(p, o); d.close(); toast(msg); await load(true); } catch (er) { $('#merr').textContent = er.message; } };
+  $('#md-save').onclick = () => x ? go(`media/${id}/update`, { method: 'POST', body: body() }, 'Data media tersimpan') : go('media', { method: 'POST', body: body() }, 'Media ditambahkan');
+  if (x) {
+    $('#mst').onclick = e => { const c = e.target.closest('.chip'); if (c) go(`media/${id}/status`, { method: 'POST', body: { status: c.dataset.s } }, 'Status diperbarui'); };
+    twoStep($('#del'), () => go('media/' + id, { method: 'DELETE' }, 'Media dihapus'));
+  }
+  setTimeout(() => !x && $('#mn').focus(), 30);
 }
 
 /* ---------- SPONSOR ---------- */
