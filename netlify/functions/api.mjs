@@ -178,7 +178,6 @@ async function handle({ method: m, path, body, token, env, anyPw }, s) {
         if (e) return err(e);
         const nomor = cl(body, "nomor", 80);
         if (!nomor) return err("Isi nomor surat");
-        if (db.letters.some((x) => x.id !== Lt.id && x.nomor && x.nomor.toLowerCase() === nomor.toLowerCase())) return err("Nomor surat sudah dipakai surat lain");
         Object.assign(Lt, f, { nomor, lampiran: cl(body, "lampiran", 40) || "-", status: "disetujui", note: "", approvedAt: Date.now(), updatedAt: Date.now() });
         await save();
         return R({ ok: true });
